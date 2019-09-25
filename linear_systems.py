@@ -8,7 +8,20 @@ import pandas as pd
 
 
 def gj_method(mat, augment_c):
-    """"""
+    """
+
+    Args:
+        mat (np.matrix): an augmented matrix
+        augment_c (int): the column number where the augmented portion of the matrix is located
+
+    Returns:
+        a matrix where the left side of the augmentation is the Identity Matrix
+        the function will fail with a "divide by zero" error in cases with no or inf solutions
+
+    """
+
+    if augment_c > mat.shape[1]:
+        raise ValueError('You have specified a value of augement_c that is outside of the range of the given matrix.')
 
     # Allows us to iterate through column
     i = 0
