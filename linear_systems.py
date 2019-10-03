@@ -1,5 +1,6 @@
 """
-
+Some solvers for simple linear systems.
+Last updated: 10.2.2019
 """
 
 import numpy as np
