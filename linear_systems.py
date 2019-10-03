@@ -8,7 +8,17 @@ import pandas as pd
 
 
 def gj_method(mat, augment_c):
-    """
+    """A (procedural?) function for solving a linear system using the Gauss-Jordan method
+    Contrary to the np.lingalg method arsenal, the input to this function expects the matrix in its augmented form.
+    That is,
+
+    [ a b c D ]
+    [ e f g H ]
+    [i j k L ]
+
+    Where the capital letter represent the column to the right of the augment-dividing-line.
+
+    WARNING: The current version of this function only supports 2x2 and 3x3 matricies.
 
     Args:
         mat (np.matrix): an augmented matrix
@@ -30,7 +40,7 @@ def gj_method(mat, augment_c):
     protected = 0
 
     while i < augment_c:
-        print(i)
+
         # Selecting the rows we wish to perform operations on
         # First, create a list with an element for each row
         row_list = [x for x in range(mat.shape[0])]
