@@ -16,7 +16,7 @@ def gj_method(mat, augment_c):
     [ e f g H ]
     [i j k L ]
 
-    Where the capital letter represent the column to the right of the augment-dividing-line.
+    Where the capital letters represent the column to the right of the augment-dividing-line.
 
     WARNING: The current version of this function only supports 2x2 and 3x3 matricies.
 
