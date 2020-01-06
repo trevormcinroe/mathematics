@@ -1,5 +1,9 @@
 """
-
+A simple implementation of a GradientDescent class for linear regression models
+Performs:
+    (1) Batch gradient descent
+    (2) Stochastic gradient descent
+    (3) Mini-batch gradient descent
 """
 
 import numpy as np
