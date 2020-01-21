@@ -57,7 +57,10 @@ def mle(x, mu, sigma):
     # p(θ|D) propto p(θ)p(D|θ)
     # The "posterior predictive distribution" p(D'|D) which is the distribution
     # over future obs given historical obs
-
+    # Coin flip example... given our observed data, what is prob that next
+    # flip is heads?
+    # p(D'|D) = INT{ p(θ|D)p(D'|θ)dθ } <- marginalizing out θ
+    # Marginalizing
     pass
 
 
