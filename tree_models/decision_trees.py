@@ -5,6 +5,7 @@
 import numpy as np
 import pandas as pd
 
+
 class CART:
 
     def __init__(self,
@@ -19,18 +20,33 @@ class CART:
         self.max_depth = max_depth
         self.var_search = var_search
 
-        self.tree_depth = 0
-        self.X_types = None
-        self.m_left = None
-        self.tree_struct = {
-            0: {
-                'num_instances': self.y.shape[0],
-                'loss': None,
-                'child': []
-            }
-        }
+        self.X_types = [str(x) for x in self.X.dtypes]
 
         self._safe_start()
+
+        self.tree_depth = 0
+        self.m_left = None
+
+        # if we are performing classification, set out gini impurity to 1 for the root node
+        if self.type == 'classification':
+            self.tree_struct = {
+                0: {
+                    'num_instances': self.y.shape[0],
+                    'loss': 1,
+                    'child': []
+                }
+            }
+
+        else:
+            self.tree_struct = {
+                0: {
+                    'num_instances': self.y.shape[0],
+                    'loss': None,
+                    'child': []
+                }
+            }
+
+
 
     def _safe_start(self):
         """Meant to check the type of data that y is"""
@@ -46,7 +62,7 @@ class CART:
         if not type(self.X) == pd.DataFrame:
             raise TypeError('Given X must be a pd.DataFrame. This helps with determining splits.')
 
-        self.X_types = [str(x) for x in self.X.dtypes]
+        # self.X_types = [str(x) for x in self.X.dtypes]
         self.X = np.array(self.X, dtype=float)
 
         if not type(self.y) == np.ndarray:
@@ -75,10 +91,34 @@ class CART:
 
     def _c_fit(self):
         """"""
+        split_result = None
 
         # Making the first split
+        while np.all([np.max([x for x in self.tree_struct.keys()]) < self.max_depth,
+                      split_result != 'none found']):
 
-        pass
+            current_node = np.max([x for x in self.tree_struct.keys()])
+            print(current_node)
+
+            split_result, lowest_col_idx, split_point = self._determine_split(current_node=current_node,
+                                                                             current_loss=self.tree_struct[current_node]['loss'])
+
+            # Adding on to our tree structure
+            self.tree_struct[current_node]['child'].append((current_node+1,
+                                                           current_node+2))
+
+
+            self.tree_struct[current_node+1] = {
+                'num_instances': self.y.shape[0],
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
+                'child': []
+            }
+
+            self.tree_struct[current_node + 2] = {
+                'num_instances': self.y.shape[0],
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
+                'child': []
+            }
 
     def _r_fit(self):
         """"""
@@ -164,8 +204,8 @@ class CART:
                             left = self._gini(node_instances_idx=self.X[:, col_idx] == clss)
                             right = self._gini(node_instances_idx=self.X[:, col_idx] != clss)
 
-                            w = (np.sum()/node_instances * left) \
-                                + (np.sum()/node_instances * left)
+                            w = (np.sum(self.X[:, col_idx] == clss)/node_instances * left) \
+                                + (np.sum(self.X[:, col_idx] != clss)/node_instances * left)
 
                             inner_ginis.append(w)
 
@@ -197,9 +237,14 @@ class CART:
                         lowest_gini = min_gini
                         lowest_col_idx = col_idx
                         split_point = splits[min_gini_idx]
+                #
+                # print(lowest_gini)
+                # print(lowest_col_idx)
+                # print(split_point)
 
                 # Now that we have looked at every column...
-                if not lowest_col_idx:
+                # if not lowest_col_idx:
+                if lowest_gini == current_loss:
                     return 'none found', None, None
                 else:
                     return lowest_gini, lowest_col_idx, split_point
@@ -212,11 +257,16 @@ class CART:
 X = pd.DataFrame(
     {
         'a': [x for x in range(10)],
-        'b': [str(x) for x in range(10)]
+        'b': ['3', '2', '3', '2', '2', '2', '3', '3', '3', '2']
     }
 )
 
 y = [0, 1, 1, 1, 1, 1, 0, 0, 0, 0]
 
-a = CART(X=X, y=y, type='classification')
-print(a._gini(node_instances_idx=[0, 1, 2, 3, 4, 5]))
+a = CART(X=X, y=y, type='classification', max_depth=1)
+# print(a._gini(node_instances_idx=[0, 1, 2, 3, 4, 5]))
+# print(a.X_types)
+# print(a._determine_split(current_loss=1, current_node=0))
+a.fit()
+
+print(a.tree_struct)
