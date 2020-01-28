@@ -3,7 +3,7 @@
 """
 
 
-class linear_regression():
+class LinearRegression():
     """A class that performs a linear regression, whether simple or multiple.
 
     Currently, this class support two estimation frameworks:
