@@ -32,8 +32,10 @@ class CART:
             self.tree_struct = {
                 0: {
                     'num_instances': self.y.shape[0],
+                    'instances': [x for x in range(self.y.shape[0])],
                     'loss': 1,
-                    'child': []
+                    'child': [],
+                    'split_on': None
                 }
             }
 
@@ -41,8 +43,10 @@ class CART:
             self.tree_struct = {
                 0: {
                     'num_instances': self.y.shape[0],
+                    'instances': [x for x in range(self.y.shape[0])],
                     'loss': None,
-                    'child': []
+                    'child': [],
+                    'split_on': None
                 }
             }
 
@@ -66,7 +70,7 @@ class CART:
         self.X = np.array(self.X, dtype=float)
 
         if not type(self.y) == np.ndarray:
-            self.y = np.array(self.y)
+            self.y = np.array(self.y, dtype=float)
 
         if not np.any([self.y.dtype == int, self.y.dtype == float]):
             raise TypeError('Given y vector must be numerical.')
@@ -98,7 +102,6 @@ class CART:
                       split_result != 'none found']):
 
             current_node = np.max([x for x in self.tree_struct.keys()])
-            print(current_node)
 
             split_result, lowest_col_idx, split_point = self._determine_split(current_node=current_node,
                                                                              current_loss=self.tree_struct[current_node]['loss'])
@@ -106,19 +109,42 @@ class CART:
             # Adding on to our tree structure
             self.tree_struct[current_node]['child'].append((current_node+1,
                                                            current_node+2))
+            self.tree_struct[current_node]['split_on'] = lowest_col_idx
 
+            if self.X_types[lowest_col_idx] == 'object':
+                print(split_point)
+                self.tree_struct[current_node + 1] = {
+                    'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                    'instances': self.X[:, lowest_col_idx] == split_point,
+                    'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] == split_point),
+                    'child': [],
+                    'split_on': None
+                }
 
-            self.tree_struct[current_node+1] = {
-                'num_instances': self.y.shape[0],
-                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
-                'child': []
-            }
+                self.tree_struct[current_node + 2] = {
+                    'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                    'instances': self.X[:, lowest_col_idx] != split_point,
+                    'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] != split_point),
+                    'child': [],
+                    'split_on': None
+                }
 
-            self.tree_struct[current_node + 2] = {
-                'num_instances': self.y.shape[0],
-                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
-                'child': []
-            }
+            else:
+                self.tree_struct[current_node+1] = {
+                    'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                    'instances': self.X[:, lowest_col_idx] < split_point,
+                    'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
+                    'child': [],
+                    'split_on': None
+                }
+
+                self.tree_struct[current_node + 2] = {
+                    'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                    'instances': self.X[:, lowest_col_idx] >= split_point,
+                    'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
+                    'child': [],
+                    'split_on': None
+                }
 
     def _r_fit(self):
         """"""
@@ -237,10 +263,6 @@ class CART:
                         lowest_gini = min_gini
                         lowest_col_idx = col_idx
                         split_point = splits[min_gini_idx]
-                #
-                # print(lowest_gini)
-                # print(lowest_col_idx)
-                # print(split_point)
 
                 # Now that we have looked at every column...
                 # if not lowest_col_idx:
@@ -257,9 +279,10 @@ class CART:
 X = pd.DataFrame(
     {
         'a': [x for x in range(10)],
-        'b': ['3', '2', '3', '2', '2', '2', '3', '3', '3', '2']
+        'b': ['3', '2', '2', '2', '2', '2', '3', '3', '2', '3']
     }
 )
+
 
 y = [0, 1, 1, 1, 1, 1, 0, 0, 0, 0]
 
