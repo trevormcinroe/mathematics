@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-
+import pandas as pd
 
 class CART:
 
@@ -20,6 +20,15 @@ class CART:
         self.var_search = var_search
 
         self.tree_depth = 0
+        self.X_types = None
+        self.m_left = None
+        self.tree_struct = {
+            0: {
+                'num_instances': self.y.shape[0],
+                'loss': None,
+                'child': []
+            }
+        }
 
         self._safe_start()
 
@@ -33,9 +42,13 @@ class CART:
         if not self.var_search in ['exhaustive', 'random']:
             raise AttributeError('var_seach must either be exhaustive or random.')
 
-        # Transforming both X and y into np.array if they are not already
-        if not type(self.X) == np.ndarray:
-            self.X = np.array(self.X)
+        # Dealing with the input data
+        if not type(self.X) == pd.DataFrame:
+            raise TypeError('Given X must be a pd.DataFrame. This helps with determining splits.')
+
+        self.X_types = [str(x) for x in self.X.dtypes]
+        self.X = np.array(self.X, dtype=float)
+
         if not type(self.y) == np.ndarray:
             self.y = np.array(self.y)
 
@@ -119,7 +132,7 @@ class CART:
         return np.sum([(x-mean_y)**2 for x in current_y])
 
 
-    def _determine_split(self, current_loss):
+    def _determine_split(self, current_loss, current_node):
         """
 
         Args:
@@ -129,27 +142,79 @@ class CART:
 
         """
 
-        if self.var_search == 'exhaustive':
-            pass
+        node_instances = self.tree_struct[current_node]['num_instances']
+
+        if self.type == 'classification':
+            if self.var_search == 'exhaustive':
+                # while self.tree_depth < self.max_depth:
+
+                lowest_gini = current_loss
+                lowest_col_idx = None
+                split_point = None
+
+                for col_idx in range(self.X.shape[1]):
+
+                    # Within this block, the types are categorical
+                    if self.X_types[col_idx] == 'object':
+                        splits = np.unique(self.X[:, col_idx])
+
+                        inner_ginis = []
+
+                        for clss in splits:
+                            left = self._gini(node_instances_idx=self.X[:, col_idx] == clss)
+                            right = self._gini(node_instances_idx=self.X[:, col_idx] != clss)
+
+                            w = (np.sum()/node_instances * left) \
+                                + (np.sum()/node_instances * left)
+
+                            inner_ginis.append(w)
+
+                    # If we reach here in the logic flow, the datatype is numeric
+                    else:
+                        # Let's try this with 10 splits
+                        data = self.X[:, col_idx].copy()
+                        data.sort()
+                        splits = np.unique(np.percentile(data, q=np.linspace(0, 100, 10)))
+
+                        # Computing the gini of each split
+                        inner_ginis = []
+
+                        for split in splits:
+                            left = self._gini(node_instances_idx=self.X[:, col_idx] < split)
+                            right = self._gini(node_instances_idx=self.X[:, col_idx] >= split)
+
+                            w = (np.sum(self.X[:, col_idx] < split)/node_instances * left) \
+                                + (np.sum(self.X[:, col_idx] >= split)/node_instances * right)
+
+                            inner_ginis.append(w)
+
+                    # Pulling out the smallest gini as well as the index
+                    min_gini = np.min(inner_ginis)
+                    min_gini_idx = inner_ginis.index(min_gini)
+
+                    # Checking
+                    if min_gini < lowest_gini:
+                        lowest_gini = min_gini
+                        lowest_col_idx = col_idx
+                        split_point = splits[min_gini_idx]
+
+                # Now that we have looked at every column...
+                if not lowest_col_idx:
+                    return 'none found', None, None
+                else:
+                    return lowest_gini, lowest_col_idx, split_point
 
         else:
             pass
 
         # Need to sweep through each column in X to determine which
 
-
-X = np.array([
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9],
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9],
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9],
-    [0, 0, 0]
-])
+X = pd.DataFrame(
+    {
+        'a': [x for x in range(10)],
+        'b': [str(x) for x in range(10)]
+    }
+)
 
 y = [0, 1, 1, 1, 1, 1, 0, 0, 0, 0]
 
