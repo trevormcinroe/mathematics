@@ -11,11 +11,13 @@ class CART:
                  X,
                  y,
                  type,
-                 max_depth=None):
+                 max_depth=None,
+                 var_search='exhaustive'):
         self.X = X
         self.y = y
         self.type = type
         self.max_depth = max_depth
+        self.var_search = var_search
 
         self.tree_depth = 0
 
@@ -27,6 +29,9 @@ class CART:
         # Checking the type of problem
         if self.type not in ['classification', 'regression']:
             raise AttributeError('Given type must be either classification or regression.')
+
+        if not self.var_search in ['exhaustive', 'random']:
+            raise AttributeError('var_seach must either be exhaustive or random.')
 
         # Transforming both X and y into np.array if they are not already
         if not type(self.X) == np.ndarray:
@@ -58,6 +63,8 @@ class CART:
     def _c_fit(self):
         """"""
 
+        # Making the first split
+
         pass
 
     def _r_fit(self):
@@ -66,7 +73,15 @@ class CART:
         pass
 
     def _gini(self, node_instances_idx):
-        """"""
+        """
+
+        Args:
+            node_instances_idx (list): the indexes of self.y that correspond to the instances in
+                                       the currently considered split
+
+        Returns:
+            the gini impurity
+        """
 
         # Pulling out the values of the y vector at the given indexes
         current_y = self.y[node_instances_idx]
@@ -85,6 +100,42 @@ class CART:
         m = len(current_y)
 
         return np.sum([class_counts[x]/m * (1 - class_counts[x]/m) for x in class_counts.keys()])
+
+    def _mse(self, node_instances_idx):
+        """
+
+        Args:
+            node_instances_idx (list): the indexes of self.y that correspond to the instances in
+                                       the currently considered split
+
+        Returns:
+            the MSE of the split
+        """
+
+        current_y = self.y[node_instances_idx]
+
+        mean_y = np.mean(current_y)
+
+        return np.sum([(x-mean_y)**2 for x in current_y])
+
+
+    def _determine_split(self, current_loss):
+        """
+
+        Args:
+            current_loss (float/int): either the gini impurity or MSE of the parent node
+
+        Returns:
+
+        """
+
+        if self.var_search == 'exhaustive':
+            pass
+
+        else:
+            pass
+
+        # Need to sweep through each column in X to determine which
 
 
 X = np.array([
