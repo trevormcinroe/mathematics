@@ -26,6 +26,7 @@ class CART:
 
         self.tree_depth = 0
         self.m_left = None
+        self.node_queue = []
 
         # if we are performing classification, set out gini impurity to 1 for the root node
         if self.type == 'classification':
@@ -91,7 +92,7 @@ class CART:
         """"""
 
         if self.type == 'classification':
-            self._c_fit()
+            self._c_fit2()
         else:
             self._r_fit()
 
@@ -99,23 +100,28 @@ class CART:
         """"""
         split_result = None
 
+        current_node = 0
+
         # Making the first split
-        while np.all([np.max([x for x in self.tree_struct.keys()]) < self.max_depth,
+        while np.all([self.tree_depth < self.max_depth,
                       split_result != 'none found']):
 
-            current_node = np.max([x for x in self.tree_struct.keys()])
+            if current_node == 0:
+                current_node = [0]
+            else:
+                pass
+
+            # current_node = np.max([x for x in self.tree_struct.keys()])
 
             split_result, lowest_col_idx, split_point = self._determine_split(current_node=current_node,
                                                                              current_loss=self.tree_struct[current_node]['loss'])
 
             # Adding on to our tree structure
-            self.tree_struct[current_node]['child'].append((current_node+1,
-                                                           current_node+2))
+            self.tree_struct[current_node]['child'].append((current_node+1, current_node+2))
             self.tree_struct[current_node]['split_on'] = lowest_col_idx
             self.tree_struct[current_node]['split_value'] = split_point
 
             if self.X_types[lowest_col_idx] == 'object':
-                print(split_point)
                 self.tree_struct[current_node + 1] = {
                     'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
                     'instances': self.X[:, lowest_col_idx] == split_point,
@@ -152,6 +158,123 @@ class CART:
                     'split_on': None,
                     'split_value': None
                 }
+
+            self.tree_depth += 1
+
+    def _c_fit2(self):
+        """"""
+
+        # On the first pass, do the split...
+        split_result, lowest_col_idx, split_point = self._determine_split(current_node=0,
+                                                                          current_loss=self.tree_struct[0]['loss'])
+
+        # Adding on to our tree structure
+        self.tree_struct[0]['child'].append((1, 2))
+        self.tree_struct[0]['split_on'] = lowest_col_idx
+        self.tree_struct[0]['split_value'] = split_point
+
+        # Adding the next node splits to our tree struct
+        if self.X_types[lowest_col_idx] == 'object':
+            self.tree_struct[0 + 1] = {
+                'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                'instances': self.X[:, lowest_col_idx] == split_point,
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] == split_point),
+                'child': [],
+                'split_on': None,
+                'split_value': None
+            }
+
+            self.tree_struct[0 + 2] = {
+                'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                'instances': self.X[:, lowest_col_idx] != split_point,
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] != split_point),
+                'child': [],
+                'split_on': None,
+                'split_value': None
+            }
+
+        else:
+            self.tree_struct[0 + 1] = {
+                'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                'instances': self.X[:, lowest_col_idx] < split_point,
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
+                'child': [],
+                'split_on': None,
+                'split_value': None
+            }
+
+            self.tree_struct[0 + 2] = {
+                'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                'instances': self.X[:, lowest_col_idx] >= split_point,
+                'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
+                'child': [],
+                'split_on': None,
+                'split_value': None
+            }
+
+        self.tree_depth = 1
+
+        self.node_queue.append((1, 2))
+
+
+
+        while np.all([self.tree_depth < self.max_depth,
+                      split_result != 'none found']):
+
+            current_node = self.node_queue.pop(0)
+            print(current_node)
+            for node in current_node:
+
+                split_result, lowest_col_idx, split_point = self._determine_split(current_node=node,
+                                                                                  current_loss=self.tree_struct[node]['loss'])
+
+                # Pulling out the highest node...
+                highest_node = np.max([x for x in self.node_queue])
+
+                # Adding on to our tree structure
+                self.tree_struct[node]['child'].append((highest_node+1, highest_node+2))
+                self.tree_struct[node]['split_on'] = lowest_col_idx
+                self.tree_struct[node]['split_value'] = split_point
+
+                if self.X_types[lowest_col_idx] == 'object':
+                    self.tree_struct[current_node + 1] = {
+                        'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                        'instances': self.X[:, lowest_col_idx] == split_point,
+                        'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] == split_point),
+                        'child': [],
+                        'split_on': None,
+                        'split_value': None
+                    }
+
+                    self.tree_struct[current_node + 2] = {
+                        'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                        'instances': self.X[:, lowest_col_idx] != split_point,
+                        'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] != split_point),
+                        'child': [],
+                        'split_on': None,
+                        'split_value': None
+                    }
+
+                else:
+                    self.tree_struct[current_node + 1] = {
+                        'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
+                        'instances': self.X[:, lowest_col_idx] < split_point,
+                        'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
+                        'child': [],
+                        'split_on': None,
+                        'split_value': None
+                    }
+
+                    self.tree_struct[current_node + 2] = {
+                        'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
+                        'instances': self.X[:, lowest_col_idx] >= split_point,
+                        'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
+                        'child': [],
+                        'split_on': None,
+                        'split_value': None
+                    }
+            self.tree_depth += 1
+
 
     def _r_fit(self):
         """"""
@@ -215,9 +338,15 @@ class CART:
 
         """
 
-        node_instances = self.tree_struct[current_node]['num_instances']
+        num_node_instances = self.tree_struct[current_node]['num_instances']
 
         if self.type == 'classification':
+            # Need an explicit check in here to see if the node already is pure
+            # This will help us to avoid any calculation below
+            if len(np.unique(self.y[self.tree_struct[current_node]['instances']])) == 1:
+                print('here')
+                return 'none found', None, None
+
             if self.var_search == 'exhaustive':
                 # while self.tree_depth < self.max_depth:
 
@@ -237,8 +366,8 @@ class CART:
                             left = self._gini(node_instances_idx=self.X[:, col_idx] == clss)
                             right = self._gini(node_instances_idx=self.X[:, col_idx] != clss)
 
-                            w = (np.sum(self.X[:, col_idx] == clss)/node_instances * left) \
-                                + (np.sum(self.X[:, col_idx] != clss)/node_instances * left)
+                            w = (np.sum(self.X[:, col_idx] == clss)/num_node_instances * left) \
+                                + (np.sum(self.X[:, col_idx] != clss)/num_node_instances * left)
 
                             inner_ginis.append(w)
 
@@ -256,8 +385,8 @@ class CART:
                             left = self._gini(node_instances_idx=self.X[:, col_idx] < split)
                             right = self._gini(node_instances_idx=self.X[:, col_idx] >= split)
 
-                            w = (np.sum(self.X[:, col_idx] < split)/node_instances * left) \
-                                + (np.sum(self.X[:, col_idx] >= split)/node_instances * right)
+                            w = (np.sum(self.X[:, col_idx] < split)/num_node_instances * left) \
+                                + (np.sum(self.X[:, col_idx] >= split)/num_node_instances * right)
 
                             inner_ginis.append(w)
 
