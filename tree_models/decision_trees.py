@@ -1,5 +1,8 @@
 """
+This module will eventually contain a custom implementation of the more popular tree-based algorithms
 
+author: trevor mcinroe
+date: 1.29.2020
 """
 
 import numpy as np
@@ -98,71 +101,6 @@ class CART:
             self._c_fit()
         else:
             self._r_fit()
-
-    # def _c_fit(self):
-    #     """"""
-    #     split_result = None
-    #
-    #     current_node = 0
-    #
-    #     # Making the first split
-    #     while np.all([self.tree_depth < self.max_depth,
-    #                   split_result != 'none found']):
-    #
-    #         if current_node == 0:
-    #             current_node = [0]
-    #         else:
-    #             pass
-    #
-    #         # current_node = np.max([x for x in self.tree_struct.keys()])
-    #
-    #         split_result, lowest_col_idx, split_point = self._determine_split(current_node=current_node,
-    #                                                                          current_loss=self.tree_struct[current_node]['loss'])
-    #
-    #         # Adding on to our tree structure
-    #         self.tree_struct[current_node]['child'].append((current_node+1, current_node+2))
-    #         self.tree_struct[current_node]['split_on'] = lowest_col_idx
-    #         self.tree_struct[current_node]['split_value'] = split_point
-    #
-    #         if self.X_types[lowest_col_idx] == 'object':
-    #             self.tree_struct[current_node + 1] = {
-    #                 'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
-    #                 'instances': self.X[:, lowest_col_idx] == split_point,
-    #                 'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] == split_point),
-    #                 'child': [],
-    #                 'split_on': None,
-    #                 'split_value': None
-    #             }
-    #
-    #             self.tree_struct[current_node + 2] = {
-    #                 'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
-    #                 'instances': self.X[:, lowest_col_idx] != split_point,
-    #                 'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] != split_point),
-    #                 'child': [],
-    #                 'split_on': None,
-    #                 'split_value': None
-    #             }
-    #
-    #         else:
-    #             self.tree_struct[current_node+1] = {
-    #                 'num_instances': len(self.y[self.X[:, lowest_col_idx] < split_point]),
-    #                 'instances': self.X[:, lowest_col_idx] < split_point,
-    #                 'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] < split_point),
-    #                 'child': [],
-    #                 'split_on': None,
-    #                 'split_value': None
-    #             }
-    #
-    #             self.tree_struct[current_node + 2] = {
-    #                 'num_instances': len(self.y[self.X[:, lowest_col_idx] >= split_point]),
-    #                 'instances': self.X[:, lowest_col_idx] >= split_point,
-    #                 'loss': self._gini(node_instances_idx=self.X[:, lowest_col_idx] >= split_point),
-    #                 'child': [],
-    #                 'split_on': None,
-    #                 'split_value': None
-    #             }
-    #
-    #         self.tree_depth += 1
 
     def _c_fit(self):
         """"""
