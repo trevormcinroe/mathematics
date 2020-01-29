@@ -73,7 +73,10 @@ class CART:
         self.X = np.array(self.X, dtype=float)
 
         if not type(self.y) == np.ndarray:
-            self.y = np.array(self.y, dtype=float)
+            if self.type == 'classification':
+                self.y = np.array(self.y, dtype=int)
+            else:
+                self.y = np.array(self.y, dtype=float)
 
         if not np.any([self.y.dtype == int, self.y.dtype == float]):
             raise TypeError('Given y vector must be numerical.')
@@ -431,19 +434,75 @@ class CART:
         else:
             pass
 
-        # Need to sweep through each column in X to determine which
+
+    def predict(self, X=None):
+        """"""
+
+        if self.type == 'classification':
+            return self._c_predict()
+        else:
+            pass
+
+    def _c_predict(self):
+        """"""
+        import time
+        time.sleep(2)
+        predictions = []
+
+        # Need to traverse the tree for each row in the given X
+        for r in range(self.X.shape[0]):
+            row_data = self.X[r, :]
+
+            current_node = 0
+
+            at_end = False
+
+            while not at_end:
+                # Perhaps we have reached the end of the tree
+                if len(self.tree_struct[current_node]['child']) == 0:
+                    # For classification, need to take the majority vote
+
+                    print(np.bincount(self.y[self.tree_struct[current_node]['instances']]))
+                    prediction = np.argmax(np.bincount(self.y[self.tree_struct[current_node]['instances']]))
+
+                    predictions.append(prediction)
+                    at_end = True
+
+                elif self.X_types[self.tree_struct[current_node]['split_on']] == 'object':
+                    if row_data[self.tree_struct[current_node]['split_on']] \
+                            == self.tree_struct[current_node]['split_value']:
+                        # go left
+                        current_node = self.tree_struct[current_node]['child'][0][0]
+
+                    else:
+                        # go right
+                        current_node = self.tree_struct[current_node]['child'][0][1]
+                else:
+                    # Here in the logic flow, we are dealing with a numeric predictor
+                    if row_data[self.tree_struct[current_node]['split_on']] \
+                            < self.tree_struct[current_node]['split_value']:
+                        # go left
+                        current_node = self.tree_struct[current_node]['child'][0][0]
+
+                    else:
+                        # go right
+                        current_node = self.tree_struct[current_node]['child'][0][1]
+
+        return predictions
 
 X = pd.DataFrame(
     {
         'a': [x for x in range(10)],
-        'b': ['3', '2', '3', '2', '2', '2', '3', '3', '2', '3']
+        'b': ['3', '2', '3', '2', '2', '2', '3', '3', '2', '3'],
+        'c': [x for x in range(10)][::-1],
+        'd': ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', ]
     }
 )
 
 
 y = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0]
 
-a = CART(X=X, y=y, type='classification', max_depth=1)
+a = CART(X=X, y=y, type='classification', max_depth=2)
 # print(a._gini(node_instances_idx=[False,  True, False,  True,  True,  True, False, False,  True, False],
               # node_conditional=X['a'] < 0))
 # print(a.X_types)
@@ -451,3 +510,6 @@ a = CART(X=X, y=y, type='classification', max_depth=1)
 a.fit()
 
 print(a.tree_struct)
+
+print(a.predict())
+
