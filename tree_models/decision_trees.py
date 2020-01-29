@@ -248,6 +248,9 @@ class CART:
                 self.tree_struct[node]['split_on'] = lowest_col_idx
                 self.tree_struct[node]['split_value'] = split_point
 
+                # Adding to the node queue
+                self.node_queue.append((highest_node+1, highest_node+2))
+
 
                 if self.X_types[lowest_col_idx] == 'object':
 
@@ -435,23 +438,35 @@ class CART:
             pass
 
 
-    def predict(self, X=None):
+    def predict(self, X):
         """"""
 
+        X = self._predict_safety(X=X)
+
         if self.type == 'classification':
-            return self._c_predict()
+            return self._c_predict(X=X)
         else:
             pass
 
-    def _c_predict(self):
+    def _predict_safety(self, X):
         """"""
-        import time
-        time.sleep(2)
+
+        if not type(X) == np.ndarray:
+            X = np.array(X, dtype=float)
+
+        if not X.shape[1] == self.X.shape[1]:
+            raise AttributeError('Given X matrix does not have the same number of columns as the data this model was trained on.')
+
+        return X
+
+    def _c_predict(self, X):
+        """"""
+
         predictions = []
 
         # Need to traverse the tree for each row in the given X
-        for r in range(self.X.shape[0]):
-            row_data = self.X[r, :]
+        for r in range(X.shape[0]):
+            row_data = X[r, :]
 
             current_node = 0
 
@@ -461,8 +476,6 @@ class CART:
                 # Perhaps we have reached the end of the tree
                 if len(self.tree_struct[current_node]['child']) == 0:
                     # For classification, need to take the majority vote
-
-                    print(np.bincount(self.y[self.tree_struct[current_node]['instances']]))
                     prediction = np.argmax(np.bincount(self.y[self.tree_struct[current_node]['instances']]))
 
                     predictions.append(prediction)
@@ -490,26 +503,41 @@ class CART:
 
         return predictions
 
-X = pd.DataFrame(
-    {
-        'a': [x for x in range(10)],
-        'b': ['3', '2', '3', '2', '2', '2', '3', '3', '2', '3'],
-        'c': [x for x in range(10)][::-1],
-        'd': ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', ]
-    }
-)
 
+from sklearn import datasets
+from sklearn.metrics import precision_score, recall_score, accuracy_score
+iris_data = datasets.load_iris()
+#
+# print(pd.DataFrame(iris_data['data']))
+# print(iris_data['target'])
 
-y = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0]
+X = pd.DataFrame(iris_data['data'])
+y = iris_data['target']
 
-a = CART(X=X, y=y, type='classification', max_depth=2)
-# print(a._gini(node_instances_idx=[False,  True, False,  True,  True,  True, False, False,  True, False],
-              # node_conditional=X['a'] < 0))
-# print(a.X_types)
-# print(a._determine_split(current_loss=1, current_node=0))
+# X = pd.DataFrame(
+#     {
+#         'a': [x for x in range(10)],
+#         'b': ['3', '2', '3', '2', '2', '2', '3', '3', '2', '3'],
+#         'c': [x for x in range(10)][::-1],
+#         'd': ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', ]
+#     }
+# )
+#
+#
+# y = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0]
+#
+a = CART(X=X, y=y, type='classification', max_depth=4)
+# # print(a._gini(node_instances_idx=[False,  True, False,  True,  True,  True, False, False,  True, False],
+#               # node_conditional=X['a'] < 0))
+# # print(a.X_types)
+# # print(a._determine_split(current_loss=1, current_node=0))
 a.fit()
+#
+# print(a.tree_struct)
+#
+preds = a.predict(X=X)
 
-print(a.tree_struct)
-
-print(a.predict())
+# print(f'Precisions: {precision_score(y_true=y, y_pred=preds)}')
+# print(f'Recall: {recall_score(y_true=y, y_pred=preds)}')
+print(f'Accuracy: {accuracy_score(y_true=y, y_pred=preds)}')
 
