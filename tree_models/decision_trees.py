@@ -443,39 +443,21 @@ class CART:
 
 
 from sklearn import datasets
-from sklearn.metrics import precision_score, recall_score, accuracy_score
+from sklearn.metrics import accuracy_score
 iris_data = datasets.load_iris()
-#
-# print(pd.DataFrame(iris_data['data']))
-# print(iris_data['target'])
+
 
 X = pd.DataFrame(iris_data['data'])
 y = iris_data['target']
 
-# X = pd.DataFrame(
-#     {
-#         'a': [x for x in range(10)],
-#         'b': ['3', '2', '3', '2', '2', '2', '3', '3', '2', '3'],
-#         'c': [x for x in range(10)][::-1],
-#         'd': ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', ]
-#     }
-# )
-#
-#
-# y = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0]
-#
 a = CART(X=X, y=y, type='classification', max_depth=4)
-# # print(a._gini(node_instances_idx=[False,  True, False,  True,  True,  True, False, False,  True, False],
-#               # node_conditional=X['a'] < 0))
-# # print(a.X_types)
-# # print(a._determine_split(current_loss=1, current_node=0))
+
 a.fit()
-#
+
 # print(a.tree_struct)
-#
+
 preds = a.predict(X=X)
 
-# print(f'Precisions: {precision_score(y_true=y, y_pred=preds)}')
-# print(f'Recall: {recall_score(y_true=y, y_pred=preds)}')
+
 print(f'Accuracy: {accuracy_score(y_true=y, y_pred=preds)}')
 
